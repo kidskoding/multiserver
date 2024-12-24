@@ -9,11 +9,12 @@ public class Server {
 
         ServerSocket serverSocket = new ServerSocket(myPort);
         System.out.println("Hosting Server on " + myIP + ":" + myPort);
+        System.out.println("Waiting for connections...");
         Socket socket = serverSocket.accept();
         System.out.println("Someone connected to the server!");
 
-        String clientIP = socket.getInetAddress().getHostAddress();
-        int clientPort = socket.getPort();
-        System.out.println("Client connected to " + clientIP + ":" + clientPort);
+        String theirIP = socket.getInetAddress().getHostAddress();
+        int theirPort = socket.getPort();
+        System.out.println("Client Info is " + theirIP + ":" + theirPort);
     }
 }
