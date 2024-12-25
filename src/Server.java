@@ -9,14 +9,12 @@ public class Server {
     private static Set<ClientData> clients;
 
     public static void main(String[] args) throws Exception {
-        clients = new LinkedHashSet<>();
+        clients = new LinkedHashSet<ClientData>();
 
         Thread acceptThread = new Thread(new AcceptThread());
         acceptThread.start();
         Thread talkThread = new Thread(new TalkThread());
         talkThread.start();
-
-        while(true) {}
     }
 
     public static void broadcast(String message) {
@@ -37,10 +35,19 @@ public class Server {
                 while(!serverSocket.isClosed()) {
                     System.out.println("Waiting for connections...");
                     Socket socket = serverSocket.accept();
-                    clients.add(new ClientData(socket));
-                    System.out.println("Someone connected to the server!");
 
-                    Thread listenThread = new Thread(new ListenThread(socket));
+                    InputStreamReader isr = new InputStreamReader(socket.getInputStream());
+                    BufferedReader br = new BufferedReader(isr);
+
+                    String username = br.readLine();
+                    String connectedIP = socket.getInetAddress().getHostAddress();
+                    int connectedPort = socket.getPort();
+                    System.out.println(username + " connected to the server!");
+                    System.out.println(username + "'s info is " + connectedIP + ":" + connectedPort);
+                    broadcast(username + " has joined the server!");
+                    clients.add(new ClientData(socket, username));
+
+                    Thread listenThread = new Thread(new ListenThread(socket, username));
                     listenThread.start();
                 }
             } catch(Exception e) {
@@ -53,11 +60,10 @@ public class Server {
         @Override
         public void run() {
             try {
-                System.out.println("Talk thread started!");
                 Scanner scan  = new Scanner(System.in);
                 while(true) {
                     String message = scan.nextLine();
-                    broadcast(message);
+                    broadcast("[Server]: " + message);
                 }
             } catch(Exception e) {
                 e.printStackTrace();
@@ -67,19 +73,26 @@ public class Server {
 
     private static class ListenThread implements Runnable {
         private Socket socket;
-        public ListenThread(Socket socket) {
+        private String username;
+        public ListenThread(Socket socket, String username) {
             this.socket = socket;
+            this.username = username;
         }
         @Override
         public void run() {
             try {
-                System.out.println("Listen thread started!");
                 InputStreamReader isr = new InputStreamReader(socket.getInputStream());
                 BufferedReader br = new BufferedReader(isr);
                 while(!socket.isClosed()) {
                     String message = br.readLine();
-                    System.out.println(message);
-                    broadcast(message);
+                    if(message == null) {
+                        System.out.println(username + " has left the server!");
+                        broadcast(username + " has left the server!");
+                        clients.removeIf(c -> c.getSocket().equals(socket));
+                        break;
+                    } else {
+                        broadcast("[" + username + "]: " + message);
+                    }
                 }
             } catch(Exception e) {
                 e.printStackTrace();
@@ -93,10 +106,10 @@ public class Server {
         private BufferedReader br;
         private PrintWriter pw;
 
-        public ClientData(Socket socket) throws Exception {
+        public ClientData(Socket socket, String username) throws Exception {
             try {
                 this.socket = socket;
-                this.username = "undefined";
+                this.username = username;
                 InputStreamReader isr = new InputStreamReader(socket.getInputStream());
                 this.br = new BufferedReader(isr);
                 OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());

@@ -19,22 +19,26 @@ public class Client implements ActionListener {
 
         Scanner scan = new Scanner(System.in);
         System.out.print("Enter IP to connect to: ");
-        String theirIP = scan.nextLine();
+        String serverIP = scan.nextLine();
         System.out.print("Enter port to connect to: ");
-        int theirPort = scan.nextInt(); scan.nextLine();
+        int serverPort = scan.nextInt(); scan.nextLine();
+        System.out.print("Enter username: ");
+        String username = scan.nextLine();
+
         System.out.println("Connecting to server...");
-        socket = new Socket(theirIP, theirPort);
+        socket = new Socket(serverIP, serverPort);
+
+        sendMessage(username);
+
+        new Client();
 
         System.out.println("Successfully joined the server!");
+        displayArea.append(username + " has joined the server!\n");
 
         Thread talkThread = new Thread(new TalkThread());
         Thread listenThread = new Thread(new ListenThread());
         talkThread.start();
         listenThread.start();
-
-        new Client();
-
-        while(true) {}
     }
 
     public Client() {
@@ -101,7 +105,6 @@ public class Client implements ActionListener {
         @Override
         public void run() {
             try {
-                System.out.println("Talk thread started!");
                 OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
                 PrintWriter pw = new PrintWriter(osw, true);
                 Scanner scan  = new Scanner(System.in);
@@ -119,7 +122,6 @@ public class Client implements ActionListener {
         @Override
         public void run() {
             try {
-                System.out.println("Listen thread started!");
                 InputStreamReader isr = new InputStreamReader(socket.getInputStream());
                 BufferedReader br = new BufferedReader(isr);
                 while(!socket.isClosed()) {
