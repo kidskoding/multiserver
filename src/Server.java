@@ -23,6 +23,14 @@ public class Server {
         }
     }
 
+    public static void broadcastUserList() {
+        StringBuilder userList = new StringBuilder("[Users]").append(" ");
+        for (ClientData c : clients) {
+            userList.append(c.getUsername()).append(" ");
+        }
+        broadcast(userList.toString());
+    }
+
     private static class AcceptThread implements Runnable {
         public void run() {
             try {
@@ -46,6 +54,7 @@ public class Server {
                     System.out.println(username + "'s info is " + connectedIP + ":" + connectedPort);
                     broadcast(username + " has joined the server!");
                     clients.add(new ClientData(socket, username));
+                    broadcastUserList();
 
                     Thread listenThread = new Thread(new ListenThread(socket, username));
                     listenThread.start();
@@ -89,6 +98,7 @@ public class Server {
                         System.out.println(username + " has left the server!");
                         broadcast(username + " has left the server!");
                         clients.removeIf(c -> c.getSocket().equals(socket));
+                        broadcastUserList();
                         break;
                     } else {
                         broadcast("[" + username + "]: " + message);

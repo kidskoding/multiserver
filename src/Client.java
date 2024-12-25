@@ -126,7 +126,17 @@ public class Client implements ActionListener {
                 BufferedReader br = new BufferedReader(isr);
                 while(!socket.isClosed()) {
                     String message = br.readLine();
-                    displayArea.append(message + "\n");
+                    if(message.startsWith("[Users]")) {
+                        userlistArea.setText("[Users]\n");
+                        String[] users = message.split(" ");
+                        for(int i = 0; i < users.length; i++) {
+                            if(i != 0 && !users[i].trim().isEmpty()) {
+                                userlistArea.append(users[i] + "\n");
+                            }
+                        }
+                    } else {
+                        displayArea.append(message + "\n");
+                    }
                 }
             } catch(Exception e) {
                 e.printStackTrace();
