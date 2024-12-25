@@ -25,6 +25,8 @@ public class Client {
         Thread listenThread = new Thread(new ListenThread(socket));
         talkThread.start();
         listenThread.start();
+
+        while(true) {}
     }
 
     private static class TalkThread implements Runnable {

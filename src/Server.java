@@ -9,23 +9,31 @@ import java.util.Scanner;
 
 public class Server {
     public static void main(String[] args) throws Exception {
-        String myIP = InetAddress.getLocalHost().getHostAddress();
-        int myPort = 8080;
+        Thread acceptThread = new Thread(new AcceptThread());
+        acceptThread.start();
+    }
 
-        ServerSocket serverSocket = new ServerSocket(myPort);
-        System.out.println("Hosting Server on " + myIP + ":" + myPort);
-        System.out.println("Waiting for connections...");
-        Socket socket = serverSocket.accept();
-        System.out.println("Someone connected to the server!");
+    private static class AcceptThread implements Runnable {
+        public void run() {
+            try {
+                String myIP = InetAddress.getLocalHost().getHostAddress();
+                int myPort = 8080;
 
-        String theirIP = socket.getInetAddress().getHostAddress();
-        int theirPort = socket.getPort();
-        System.out.println("Client Info is " + theirIP + ":" + theirPort);
+                ServerSocket serverSocket = new ServerSocket(myPort);
+                System.out.println("Hosting Server on " + myIP + ":" + myPort);
 
-        Thread talkThread = new Thread(new TalkThread(socket));
-        Thread listenThread = new Thread(new ListenThread(socket));
-        talkThread.start();
-        listenThread.start();
+                while(!serverSocket.isClosed()) {
+                    System.out.println("Waiting for connections...");
+                    Socket socket = serverSocket.accept();
+                    System.out.println("Someone connected to the server!");
+
+                    Thread listenThread = new Thread(new ListenThread(socket));
+                    listenThread.start();
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static class TalkThread implements Runnable {
