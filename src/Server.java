@@ -1,16 +1,28 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
+
+import java.util.LinkedHashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Server {
+    private static Set<ClientData> clients;
+
     public static void main(String[] args) throws Exception {
+        clients = new LinkedHashSet<>();
+
         Thread acceptThread = new Thread(new AcceptThread());
         acceptThread.start();
+        Thread talkThread = new Thread(new TalkThread());
+        talkThread.start();
+
+        while(true) {}
+    }
+
+    public static void broadcast(String message) {
+        for(ClientData c : clients) {
+            c.getPrintWriter().println(message);
+        }
     }
 
     private static class AcceptThread implements Runnable {
@@ -25,6 +37,7 @@ public class Server {
                 while(!serverSocket.isClosed()) {
                     System.out.println("Waiting for connections...");
                     Socket socket = serverSocket.accept();
+                    clients.add(new ClientData(socket));
                     System.out.println("Someone connected to the server!");
 
                     Thread listenThread = new Thread(new ListenThread(socket));
@@ -37,20 +50,14 @@ public class Server {
     }
 
     private static class TalkThread implements Runnable {
-        private Socket socket;
-        public TalkThread(Socket socket) {
-            this.socket = socket;
-        }
         @Override
         public void run() {
             try {
                 System.out.println("Talk thread started!");
-                OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
-                PrintWriter pw = new PrintWriter(osw, true);
                 Scanner scan  = new Scanner(System.in);
-                while(!socket.isClosed()) {
+                while(true) {
                     String message = scan.nextLine();
-                    pw.println(message);
+                    broadcast(message);
                 }
             } catch(Exception e) {
                 e.printStackTrace();
@@ -72,10 +79,44 @@ public class Server {
                 while(!socket.isClosed()) {
                     String message = br.readLine();
                     System.out.println(message);
+                    broadcast(message);
                 }
             } catch(Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private static class ClientData {
+        private Socket socket;
+        private String username;
+        private BufferedReader br;
+        private PrintWriter pw;
+
+        public ClientData(Socket socket) throws Exception {
+            try {
+                this.socket = socket;
+                this.username = "undefined";
+                InputStreamReader isr = new InputStreamReader(socket.getInputStream());
+                this.br = new BufferedReader(isr);
+                OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
+                this.pw = new PrintWriter(osw, true);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        public Socket getSocket() {
+            return this.socket;
+        }
+        public String getUsername() {
+            return this.username;
+        }
+        public BufferedReader getBufferedReader() {
+            return this.br;
+        }
+        public PrintWriter getPrintWriter() {
+            return this.pw;
         }
     }
 }
